@@ -1,0 +1,24 @@
+{
+  "name": "rock-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for RockRMS system integration with SQL execution capabilities",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/server.js",
+    "dev": "tsc --watch & node --watch dist/server.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": ["mcp", "rockrms", "sql", "server", "typescript"],
+  "author": "",
+  "license": "MIT"
+} 
