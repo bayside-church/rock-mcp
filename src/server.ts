@@ -39,30 +39,30 @@ function setupToolHandlers(): void {
     async (): Promise<{ tools: Tool[] }> => {
       return {
         tools: [
-          {
-            name: "execute_sql",
-            description: "Execute SQL queries against the RockRMS server",
-            inputSchema: {
-              type: "object",
-              properties: {
-                query: {
-                  type: "string",
-                  description: "The SQL query to execute",
-                },
-              },
-              required: ["query"],
-            },
-          },
+          //   {
+          //     name: "execute_sql",
+          //     description: "Execute SQL queries against the RockRMS server",
+          //     inputSchema: {
+          //       type: "object",
+          //       properties: {
+          //         query: {
+          //           type: "string",
+          //           description: "The SQL query to execute",
+          //         },
+          //       },
+          //       required: ["query"],
+          //     },
+          //   },
           {
             name: "get_pages",
-            description: "Get pages from the RockRMS /api/Pages endpoint",
+            description: "Get pages from the RockRMS API",
             inputSchema: {
               type: "object",
               properties: {
                 params: {
                   type: "object",
                   description:
-                    "Query parameters for filtering pages (e.g., $filter, $select, $top)",
+                    "Query parameters for filtering pages (e.g., $filter, $select, $top). The following OData filters are NOT supported: contains",
                 },
               },
               required: [],

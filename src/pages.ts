@@ -17,14 +17,7 @@ export async function executePages(
       params: args.params,
     });
 
-    const result = response.data.map((page: any) => ({
-      id: page.Id,
-      name: page.PageTitle,
-      guid: page.Guid,
-      parentPageId: page.ParentPageId,
-    }));
-
-    return result;
+    return response.data;
   } catch (error) {
     const errorMessage = formatAPIError(error);
 
