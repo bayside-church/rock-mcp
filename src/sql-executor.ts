@@ -1,5 +1,5 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { formatAPIError } from "./api-client.js";
+import { formatAPIError, createClient } from "./api-client.js";
 
 export interface SQLExecutionArgs {
   query: string;
@@ -18,7 +18,13 @@ export async function executeSQL(
   const { query } = args;
 
   try {
-    throw new Error("Not implemented");
+    const client = createClient();
+    const response = await client.post("/api/Lava/RenderTemplate", {
+      params: {
+        template: `{% sql %}${query}{% endsql %}`,
+      },
+    });
+    return response.data;
   } catch (error) {
     const errorMessage = formatAPIError(error);
 
