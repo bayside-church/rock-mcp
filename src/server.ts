@@ -18,6 +18,16 @@ import {
   validatePagesArgs,
   PagesExecutionArgs,
 } from "./pages.js";
+import {
+  executeLavaApps,
+  validateLavaAppsArgs,
+  LavaAppsExecutionArgs,
+} from "./lava-apps.js";
+import {
+  executeBlocks,
+  validateBlocksArgs,
+  BlocksExecutionArgs,
+} from "./blocks.js";
 
 // Create server instance
 const server = new Server(
@@ -39,20 +49,20 @@ function setupToolHandlers(): void {
     async (): Promise<{ tools: Tool[] }> => {
       return {
         tools: [
-          //   {
-          //     name: "execute_sql",
-          //     description: "Execute SQL queries against the RockRMS server",
-          //     inputSchema: {
-          //       type: "object",
-          //       properties: {
-          //         query: {
-          //           type: "string",
-          //           description: "The SQL query to execute",
-          //         },
+          // {
+          //   name: "execute_sql",
+          //   description: "Execute SQL queries against the RockRMS server",
+          //   inputSchema: {
+          //     type: "object",
+          //     properties: {
+          //       query: {
+          //         type: "string",
+          //         description: "The SQL query to execute",
           //       },
-          //       required: ["query"],
           //     },
+          //     required: ["query"],
           //   },
+          // },
           {
             name: "get_pages",
             description: "Get pages from the RockRMS API",
@@ -63,6 +73,36 @@ function setupToolHandlers(): void {
                   type: "object",
                   description:
                     "Query parameters for filtering pages (e.g., $filter, $select, $top). The following OData filters are NOT supported: contains",
+                },
+              },
+              required: [],
+            },
+          },
+          {
+            name: "get_lava_apps",
+            description: "Get the list of lava applications from RockRMS",
+            inputSchema: {
+              type: "object",
+              properties: {
+                params: {
+                  type: "object",
+                  description:
+                    "Query parameters for filtering lava applications (e.g., $filter, $select, $top)",
+                },
+              },
+              required: [],
+            },
+          },
+          {
+            name: "get_blocks",
+            description: "Get blocks from the RockRMS API",
+            inputSchema: {
+              type: "object",
+              properties: {
+                params: {
+                  type: "object",
+                  description:
+                    "Query parameters for filtering blocks (e.g., $filter, $select, $top)",
                 },
               },
               required: [],
@@ -90,6 +130,22 @@ function setupToolHandlers(): void {
           throw new Error("Invalid arguments for get_pages");
         }
         return await executePages(args);
+      }
+
+      if (request.params.name === "get_lava_apps") {
+        const args = request.params.arguments;
+        if (!validateLavaAppsArgs(args)) {
+          throw new Error("Invalid arguments for get_lava_apps");
+        }
+        return await executeLavaApps(args);
+      }
+
+      if (request.params.name === "get_blocks") {
+        const args = request.params.arguments;
+        if (!validateBlocksArgs(args)) {
+          throw new Error("Invalid arguments for get_blocks");
+        }
+        return await executeBlocks(args);
       }
 
       throw new Error(`Unknown tool: ${request.params.name}`);
