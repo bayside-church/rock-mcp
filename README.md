@@ -23,24 +23,114 @@ A Model Context Protocol (MCP) server for interacting with RockRMS APIs. This se
 
 ## Configuration
 
-Configure your RockRMS API connection by setting environment variables:
+### Environment Variables
 
-```bash
-export ROCK_API_BASE_URL="https://rock.yourdomain.com"
-export ROCK_API_KEY="your-api-key"
-```
+Configure your RockRMS API connection using environment variables. The server supports `.env` files for easy configuration.
 
-Alternatively, create a `.env` file:
-```env
-ROCK_API_BASE_URL=https://rock.yourdomain.com
-ROCK_API_KEY=your-api-key
-```
+1. **Copy the example configuration:**
+   ```bash
+   cp config.env.example .env
+   ```
+
+2. **Edit the `.env` file with your actual values:**
+   ```env
+   # Rock RMS API Configuration
+   ROCK_API_BASE_URL=https://your-rock-instance.com
+   ROCK_API_KEY=your_api_key_here
+   
+   # Server Configuration (optional)
+   PORT=3003
+   ```
+
+3. **Alternative: Set environment variables directly:**
+   ```bash
+   export ROCK_API_BASE_URL="https://rock.yourdomain.com"
+   export ROCK_API_KEY="your-api-key"
+   export PORT="3003"
+   ```
+
+### Available Environment Variables
+
+- `ROCK_API_BASE_URL` - Your RockRMS instance URL (required)
+- `ROCK_API_KEY` - Your RockRMS API key (required)
+- `PORT` - Server port (default: 3003 for Streamable HTTP, 3002 for SSE, 3001 for stdio)
 
 ## Usage
 
-Start the server:
+The Rock MCP Server supports three different transport modes:
+
+### Streamable HTTP (Recommended)
+Modern transport protocol with better performance and stability:
 ```bash
-npm start
+npm run dev              # Default mode
+npm run dev:streamable   # Explicit streamable HTTP
+```
+**Endpoint:** `http://localhost:3003/mcp`
+
+### SSE (Server-Sent Events)
+HTTP + SSE transport for remote connections:
+```bash
+npm run dev:sse
+```
+**Endpoint:** `http://localhost:3002/sse`
+
+### Stdio (Standard Input/Output)
+Local transport mode for direct MCP communication:
+```bash
+npm run dev:stdio
+npm start                # Production mode
+```
+**Communication:** Standard input/output streams
+
+### Cursor IDE Configuration
+
+Add the following to your `.cursor/mcp.json` file:
+
+#### For Streamable HTTP (Recommended):
+```json
+{
+  "mcpServers": {
+    "rock-mcp-server": {
+      "url": "http://localhost:3003/mcp",
+      "env": {
+        "ROCK_API_BASE_URL": "https://your-rock-instance.com",
+        "ROCK_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+#### For SSE:
+```json
+{
+  "mcpServers": {
+    "rock-mcp-server": {
+      "url": "http://localhost:3002/sse",
+      "env": {
+        "ROCK_API_BASE_URL": "https://your-rock-instance.com",
+        "ROCK_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+#### For Stdio:
+```json
+{
+  "mcpServers": {
+    "rock-mcp-server": {
+      "command": "node",
+      "args": ["dist/server.js"],
+      "cwd": "/path/to/rock-mcp",
+      "env": {
+        "ROCK_API_BASE_URL": "https://your-rock-instance.com",
+        "ROCK_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
 ```
 
 ### Available Tools

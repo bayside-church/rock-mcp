@@ -1,5 +1,5 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { createClient, formatAPIError } from "./api-client";
+import { createClient, formatAPIError } from "./api-client.js";
 
 export interface LavaAppsExecutionArgs {
   params?: Record<string, any>;
