@@ -25,7 +25,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { executePages } from "./pages.js";
 import { executeBlocks } from "./blocks.js";
-import { executeLavaApps } from "./lava-apps.js";
+import { executeLavaApps, addLavaApp } from "./lava-apps.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -78,12 +78,33 @@ const GetLavaAppsSchema = z.object({
     ),
 });
 
+const AddLavaAppSchema = z.object({
+  name: z.string().describe("Name of the Lava application"),
+  slug: z.string().optional().describe("Slug of the Lava application"),
+  configurationRigging: z
+    .string()
+    .optional()
+    .describe(
+      "Use this field to specify your application's configuration settings in JSON format. It provides a structured way to customize your application's settings. You can reference this configuration as an object in your endpoint template using the merge field 'ConfigurationRigging'."
+    ),
+  description: z
+    .string()
+    .optional()
+    .describe("Description of the Lava application"),
+  isActive: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Whether the app is active"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
   GET_LAVA_APPS = "getLavaApps",
   GET_BLOCKS = "getBlocks",
   EXECUTE_SQL = "executeSQL",
+  ADD_LAVA_APP = "addLavaApp",
 }
 
 enum PromptName {
@@ -419,6 +440,11 @@ export const createServer = () => {
         description: "Get lava applications from the RockRMS API",
         inputSchema: zodToJsonSchema(GetLavaAppsSchema) as ToolInput,
       },
+      {
+        name: ToolName.ADD_LAVA_APP,
+        description: "Add a new lava application to RockRMS",
+        inputSchema: zodToJsonSchema(AddLavaAppSchema) as ToolInput,
+      },
     ];
 
     return { tools };
@@ -471,6 +497,12 @@ export const createServer = () => {
           },
         ],
       };
+    }
+
+    if (name === ToolName.ADD_LAVA_APP) {
+      const validatedArgs = AddLavaAppSchema.parse(args);
+      const result = await addLavaApp(validatedArgs);
+      return result;
     }
 
     throw new Error(`Unknown tool: ${name}`);
