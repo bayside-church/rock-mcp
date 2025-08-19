@@ -23,7 +23,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { executePages } from "./pages.js";
+import { getPages, addPages } from "./pages.js";
 import { executeBlocks } from "./blocks.js";
 import { executeLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 
@@ -119,6 +119,17 @@ const AddLavaEndpointSchema = z.object({
     .describe("Whether the endpoint is active"),
 });
 
+const AddPagesSchema = z.object({
+  internalName: z.string().describe("Internal name of the page"),
+  pageTitle: z.string().describe("Title of the page"),
+  browserTitle: z.string().optional().describe("Browser title of the page"),
+  parentPageId: z
+    .number()
+    .optional()
+    .describe("Parent page ID (for child pages)"),
+  layoutId: z.number().optional().describe("Layout ID to use for the page"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
@@ -127,6 +138,7 @@ enum ToolName {
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
+  ADD_PAGES = "addPages",
 }
 
 enum PromptName {
@@ -472,6 +484,11 @@ export const createServer = () => {
         description: "Add a new lava endpoint to RockRMS",
         inputSchema: zodToJsonSchema(AddLavaEndpointSchema) as ToolInput,
       },
+      {
+        name: ToolName.ADD_PAGES,
+        description: "Add a new page to RockRMS",
+        inputSchema: zodToJsonSchema(AddPagesSchema) as ToolInput,
+      },
     ];
 
     return { tools };
@@ -489,7 +506,7 @@ export const createServer = () => {
 
     if (name === ToolName.GET_PAGES) {
       const validatedArgs = GetPagesSchema.parse(args);
-      const result = await executePages(validatedArgs);
+      const result = await getPages(validatedArgs);
       return {
         content: [
           {
@@ -535,6 +552,12 @@ export const createServer = () => {
     if (name === ToolName.ADD_LAVA_ENDPOINT) {
       const validatedArgs = AddLavaEndpointSchema.parse(args);
       const result = await addLavaEndpoint(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.ADD_PAGES) {
+      const validatedArgs = AddPagesSchema.parse(args);
+      const result = await addPages(validatedArgs);
       return result;
     }
 
