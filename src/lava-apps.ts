@@ -19,8 +19,58 @@ export async function executeLavaApps(
         $select: "Id,Guid,PageTitle,InternalName",
       },
     });
-    console.log(pagesResponse.data);
-    return pagesResponse.data;
+
+    if (pagesResponse.data.length === 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Applications page",
+          },
+        ],
+      };
+    }
+
+    const pageGuid = pagesResponse.data[0].Guid;
+
+    const blocksResponse = await client.get("/api/Blocks", {
+      params: {
+        $filter: `Name eq 'Lava Application List'`,
+        $select: "Id,Name,BlockTypeId,Guid",
+      },
+    });
+
+    if (blocksResponse.data.length === 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Application List block",
+          },
+        ],
+      };
+    }
+
+    const blockGuid = blocksResponse.data[0].Guid;
+
+    console.error(
+      "fetching grid data",
+      `/api/v2/BlockActions/${pageGuid}/${blockGuid}/GetGridData`
+    );
+
+    const gridResponse = await client.get(
+      `/api/v2/BlockActions/${pageGuid}/${blockGuid}/GetGridData`,
+      {}
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(gridResponse.data, null, 2),
+        },
+      ],
+    };
   } catch (error) {
     const errorMessage = formatAPIError(error);
 
