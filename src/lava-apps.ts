@@ -15,6 +15,15 @@ export interface AddLavaAppArgs {
   isActive?: boolean;
 }
 
+export interface AddLavaEndpointArgs {
+  name: string;
+  lavaApplicationId: string;
+  slug?: string;
+  description?: string;
+  codeTemplate?: string;
+  isActive?: boolean;
+}
+
 // Utility function to get page GUID by page title
 async function getPageGuid(pageTitle: string): Promise<string | null> {
   try {
@@ -181,12 +190,24 @@ export async function addLavaApp(
       }
     );
 
+    console.error("response", response);
+
+    const lavaApplicationEditorUrl =
+      process.env.ROCK_API_BASE_URL + response.data;
+    const lavaApplicationId = response.data.replace(
+      "/cms/lava-applications/",
+      ""
+    );
+
     return {
       content: [
         {
           type: "text",
           text: `Successfully created Lava Application: ${JSON.stringify(
-            response.data,
+            {
+              lavaApplicationEditorUrl,
+              lavaApplicationId,
+            },
             null,
             2
           )}`,
@@ -209,6 +230,124 @@ export async function addLavaApp(
   }
 }
 
+// Add a new Lava Endpoint
+export async function addLavaEndpoint(
+  args: AddLavaEndpointArgs
+): Promise<CallToolResult> {
+  try {
+    const client = createClient();
+
+    const pageGuid = await getPageGuid("Lava Endpoint Detail");
+    if (!pageGuid) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Endpoint Detail page",
+          },
+        ],
+      };
+    }
+
+    const blockGuid = await getBlockGuid("Lava Endpoint Detail");
+    if (!blockGuid) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Endpoint Detail block",
+          },
+        ],
+      };
+    }
+
+    const response = await client.post(
+      `/api/v2/BlockActions/${pageGuid}/${blockGuid}/Save`,
+      {
+        __context: {
+          pageParameters: {
+            LavaApplicationId: args.lavaApplicationId,
+            LavaEndpointId: "0",
+          },
+        },
+        box: {
+          entity: {
+            attributes: {},
+            attributeValues: {},
+            cacheControlHeaderSettings: null,
+            codeTemplate: args.codeTemplate || "",
+            description: args.description || "",
+            enableCrossSiteForgeryProtection: true,
+            enabledLavaCommands: [
+              {
+                category: null,
+                disabled: null,
+                text: "All",
+                value: "All",
+              },
+            ],
+            httpMethod: 0,
+            idKey: "",
+            isActive: args.isActive !== undefined ? args.isActive : true,
+            name: args.name,
+            rateLimitPeriodDurationSeconds: null,
+            rateLimitRequestPerPeriod: null,
+            securityMode: 0,
+            slug: args.slug || args.name.toLowerCase().replace(/ /g, "-"),
+          },
+          isEditable: true,
+          validProperties: [
+            "attributeValues",
+            "description",
+            "isActive",
+            "name",
+            "codeTemplate",
+            "slug",
+            "httpMethod",
+            "enabledLavaCommands",
+            "rateLimitPeriodDurationSeconds",
+            "rateLimitRequestPerPeriod",
+            "cacheControlHeaderSettings",
+            "securityMode",
+          ],
+        },
+      }
+    );
+
+    const lavaEndpointEditorUrl = process.env.ROCK_API_BASE_URL + response.data;
+    const lavaEndpointId = response.data.replace("/cms/lava-applications/", "");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully created Lava Endpoint: ${JSON.stringify(
+            {
+              lavaEndpointEditorUrl,
+              lavaEndpointId,
+            },
+            null,
+            2
+          )}`,
+        },
+      ],
+    };
+  } catch (error) {
+    console.error("error", error);
+    const errorMessage = formatAPIError(error);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error creating Lava Endpoint: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
 // Validate Lava Apps execution arguments
 export function validateLavaAppsArgs(
   args: unknown
@@ -218,6 +357,18 @@ export function validateLavaAppsArgs(
 
 // Validate Add Lava App arguments
 export function validateAddLavaAppArgs(args: unknown): args is AddLavaAppArgs {
+  return (
+    args !== null &&
+    typeof args === "object" &&
+    "name" in args &&
+    typeof (args as any).name === "string"
+  );
+}
+
+// Validate Add Lava Endpoint arguments
+export function validateAddLavaEndpointArgs(
+  args: unknown
+): args is AddLavaEndpointArgs {
   return (
     args !== null &&
     typeof args === "object" &&

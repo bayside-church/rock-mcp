@@ -25,7 +25,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { executePages } from "./pages.js";
 import { executeBlocks } from "./blocks.js";
-import { executeLavaApps, addLavaApp } from "./lava-apps.js";
+import { executeLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -98,6 +98,27 @@ const AddLavaAppSchema = z.object({
     .describe("Whether the app is active"),
 });
 
+const AddLavaEndpointSchema = z.object({
+  lavaApplicationId: z.string().describe("Lava application ID"),
+  name: z.string().describe("Name of the Lava endpoint"),
+  slug: z.string().optional().describe("Slug of the Lava endpoint"),
+  codeTemplate: z
+    .string()
+    .optional()
+    .describe(
+      "The Lava endpoint code template. This is the code that will be executed when the endpoint is called."
+    ),
+  description: z
+    .string()
+    .optional()
+    .describe("Description of the Lava endpoint"),
+  isActive: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Whether the endpoint is active"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
@@ -105,6 +126,7 @@ enum ToolName {
   GET_BLOCKS = "getBlocks",
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
+  ADD_LAVA_ENDPOINT = "addLavaEndpoint",
 }
 
 enum PromptName {
@@ -445,6 +467,11 @@ export const createServer = () => {
         description: "Add a new lava application to RockRMS",
         inputSchema: zodToJsonSchema(AddLavaAppSchema) as ToolInput,
       },
+      {
+        name: ToolName.ADD_LAVA_ENDPOINT,
+        description: "Add a new lava endpoint to RockRMS",
+        inputSchema: zodToJsonSchema(AddLavaEndpointSchema) as ToolInput,
+      },
     ];
 
     return { tools };
@@ -502,6 +529,12 @@ export const createServer = () => {
     if (name === ToolName.ADD_LAVA_APP) {
       const validatedArgs = AddLavaAppSchema.parse(args);
       const result = await addLavaApp(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.ADD_LAVA_ENDPOINT) {
+      const validatedArgs = AddLavaEndpointSchema.parse(args);
+      const result = await addLavaEndpoint(validatedArgs);
       return result;
     }
 
