@@ -15,20 +15,59 @@ export interface AddLavaAppArgs {
   isActive?: boolean;
 }
 
+// Utility function to get page GUID by page title
+async function getPageGuid(pageTitle: string): Promise<string | null> {
+  try {
+    const client = createClient();
+    const pagesResponse = await client.get("/api/Pages", {
+      params: {
+        $filter: `PageTitle eq '${pageTitle}'`,
+        $select: "Id,Guid,PageTitle,InternalName",
+      },
+    });
+
+    if (pagesResponse.data.length === 0) {
+      return null;
+    }
+
+    return pagesResponse.data[0].Guid;
+  } catch (error) {
+    console.error(`Error fetching page '${pageTitle}':`, error);
+    return null;
+  }
+}
+
+// Utility function to get block GUID by block name
+async function getBlockGuid(blockName: string): Promise<string | null> {
+  try {
+    const client = createClient();
+    const blocksResponse = await client.get("/api/Blocks", {
+      params: {
+        $filter: `Name eq '${blockName}'`,
+        $select: "Id,Name,BlockTypeId,Guid",
+      },
+    });
+
+    if (blocksResponse.data.length === 0) {
+      return null;
+    }
+
+    return blocksResponse.data[0].Guid;
+  } catch (error) {
+    console.error(`Error fetching block '${blockName}':`, error);
+    return null;
+  }
+}
+
 // Execute Lava Apps API call
 export async function executeLavaApps(
   args: LavaAppsExecutionArgs
 ): Promise<CallToolResult> {
   try {
     const client = createClient();
-    const pagesResponse = await client.get("/api/Pages", {
-      params: {
-        $filter: "PageTitle eq 'Lava Applications'",
-        $select: "Id,Guid,PageTitle,InternalName",
-      },
-    });
 
-    if (pagesResponse.data.length === 0) {
+    const pageGuid = await getPageGuid("Lava Applications");
+    if (!pageGuid) {
       return {
         content: [
           {
@@ -39,16 +78,8 @@ export async function executeLavaApps(
       };
     }
 
-    const pageGuid = pagesResponse.data[0].Guid;
-
-    const blocksResponse = await client.get("/api/Blocks", {
-      params: {
-        $filter: `Name eq 'Lava Application List'`,
-        $select: "Id,Name,BlockTypeId,Guid",
-      },
-    });
-
-    if (blocksResponse.data.length === 0) {
+    const blockGuid = await getBlockGuid("Lava Application List");
+    if (!blockGuid) {
       return {
         content: [
           {
@@ -58,8 +89,6 @@ export async function executeLavaApps(
         ],
       };
     }
-
-    const blockGuid = blocksResponse.data[0].Guid;
 
     console.error(
       "fetching grid data",
@@ -100,14 +129,9 @@ export async function addLavaApp(
 ): Promise<CallToolResult> {
   try {
     const client = createClient();
-    const pagesResponse = await client.get("/api/Pages", {
-      params: {
-        $filter: "PageTitle eq 'Lava Application Detail'",
-        $select: "Id,Guid,PageTitle,InternalName",
-      },
-    });
 
-    if (pagesResponse.data.length === 0) {
+    const pageGuid = await getPageGuid("Lava Application Detail");
+    if (!pageGuid) {
       return {
         content: [
           {
@@ -118,16 +142,8 @@ export async function addLavaApp(
       };
     }
 
-    const pageGuid = pagesResponse.data[0].Guid;
-
-    const blocksResponse = await client.get("/api/Blocks", {
-      params: {
-        $filter: `Name eq 'Lava Application Detail'`,
-        $select: "Id,Name,BlockTypeId,Guid",
-      },
-    });
-
-    if (blocksResponse.data.length === 0) {
+    const blockGuid = await getBlockGuid("Lava Application Detail");
+    if (!blockGuid) {
       return {
         content: [
           {
@@ -137,8 +153,6 @@ export async function addLavaApp(
         ],
       };
     }
-
-    const blockGuid = blocksResponse.data[0].Guid;
 
     const response = await client.post(
       `/api/v2/BlockActions/${pageGuid}/${blockGuid}/Save`,
@@ -208,8 +222,6 @@ export function validateAddLavaAppArgs(args: unknown): args is AddLavaAppArgs {
     args !== null &&
     typeof args === "object" &&
     "name" in args &&
-    "lavaCode" in args &&
-    typeof (args as any).name === "string" &&
-    typeof (args as any).lavaCode === "string"
+    typeof (args as any).name === "string"
   );
 }
