@@ -137,6 +137,12 @@ const AddLavaAppSchema = z.object({
     .optional()
     .default(true)
     .describe("Whether the app is active"),
+  securityMode: z
+    .number()
+    .optional()
+    .describe(
+      "Security mode for the Lava application. Options: 0 = Endpoint Execute, 1 = Application View, 2 = Application Edit, 3 = Application Administrate. Determines how security will be determined for the application."
+    ),
 });
 
 const AddLavaEndpointSchema = z.object({

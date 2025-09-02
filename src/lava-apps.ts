@@ -13,6 +13,7 @@ export interface AddLavaAppArgs {
   description?: string;
   configurationRigging?: string;
   isActive?: boolean;
+  securityMode?: number;
 }
 
 export interface AddLavaEndpointArgs {
@@ -176,6 +177,8 @@ export async function addLavaApp(
             isActive: args.isActive !== undefined ? args.isActive : true,
             name: args.name,
             slug: args.slug || args.name.toLowerCase().replace(/ /g, "-"),
+            securityMode:
+              args.securityMode !== undefined ? args.securityMode : 1,
           },
           isEditable: true,
           validProperties: [
@@ -185,6 +188,7 @@ export async function addLavaApp(
             "name",
             "configurationRigging",
             "slug",
+            "securityMode",
           ],
         },
       }
