@@ -24,7 +24,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { getPages, addPages } from "./pages.js";
-import { executeBlocks } from "./blocks.js";
+import { getBlocks, addBlock } from "./blocks.js";
 import { executeLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -130,6 +130,17 @@ const AddPagesSchema = z.object({
   layoutId: z.number().optional().describe("Layout ID to use for the page"),
 });
 
+const AddBlocksSchema = z.object({
+  name: z.string().describe("Name of the block"),
+  blockTypeId: z.number().optional().describe("Block type ID"),
+  pageId: z
+    .number()
+    .optional()
+    .describe("Page ID where the block will be placed"),
+  zone: z.string().optional().describe("Zone where the block will be placed"),
+  order: z.number().optional().describe("Order of the block in the zone"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
@@ -139,6 +150,7 @@ enum ToolName {
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
   ADD_PAGES = "addPages",
+  ADD_BLOCKS = "addBlock",
 }
 
 enum PromptName {
@@ -489,6 +501,11 @@ export const createServer = () => {
         description: "Add a new page to RockRMS",
         inputSchema: zodToJsonSchema(AddPagesSchema) as ToolInput,
       },
+      {
+        name: ToolName.ADD_BLOCKS,
+        description: "Add a new block to RockRMS",
+        inputSchema: zodToJsonSchema(AddBlocksSchema) as ToolInput,
+      },
     ];
 
     return { tools };
@@ -519,7 +536,7 @@ export const createServer = () => {
 
     if (name === ToolName.GET_BLOCKS) {
       const validatedArgs = GetBlocksSchema.parse(args);
-      const result = await executeBlocks(validatedArgs);
+      const result = await getBlocks(validatedArgs);
       return {
         content: [
           {
@@ -558,6 +575,12 @@ export const createServer = () => {
     if (name === ToolName.ADD_PAGES) {
       const validatedArgs = AddPagesSchema.parse(args);
       const result = await addPages(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.ADD_BLOCKS) {
+      const validatedArgs = AddBlocksSchema.parse(args);
+      const result = await addBlock(validatedArgs);
       return result;
     }
 
