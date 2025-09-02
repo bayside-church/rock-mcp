@@ -69,7 +69,7 @@ async function getBlockGuid(blockName: string): Promise<string | null> {
 }
 
 // Execute Lava Apps API call
-export async function executeLavaApps(
+export async function getLavaApps(
   args: LavaAppsExecutionArgs
 ): Promise<CallToolResult> {
   try {

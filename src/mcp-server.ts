@@ -25,7 +25,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { getPages, addPages } from "./pages.js";
 import { getBlocks, addBlock } from "./blocks.js";
-import { executeLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
+import { getLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 import {
   getAttributes,
   addAttribute,
@@ -631,7 +631,7 @@ export const createServer = () => {
 
     if (name === ToolName.GET_LAVA_APPS) {
       const validatedArgs = GetLavaAppsSchema.parse(args);
-      const result = await executeLavaApps(validatedArgs);
+      const result = await getLavaApps(validatedArgs);
       return {
         content: [
           {
