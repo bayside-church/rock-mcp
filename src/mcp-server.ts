@@ -26,6 +26,11 @@ import { dirname, join } from "path";
 import { getPages, addPages } from "./pages.js";
 import { getBlocks, addBlock } from "./blocks.js";
 import { executeLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
+import {
+  getAttributes,
+  addAttribute,
+  updateAttributeValue,
+} from "./attribute-values.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -75,6 +80,41 @@ const GetLavaAppsSchema = z.object({
     })
     .describe(
       "Query parameters for filtering lava applications (e.g., $filter, $select, $top)"
+    ),
+});
+
+const GetAttributesSchema = z.object({
+  params: z
+    .object({
+      $expand: z
+        .string()
+        .optional()
+        .describe("Expands related entities inline"),
+      $filter: z
+        .string()
+        .optional()
+        .describe("Filters the results, based on a Boolean condition"),
+      $select: z
+        .string()
+        .optional()
+        .describe("Selects which properties to include in the response"),
+      $orderby: z.string().optional().describe("Sorts the results"),
+      $top: z.number().optional().describe("Returns only the first n results"),
+      $skip: z.number().optional().describe("Skips the first n results"),
+      LoadAttributes: z
+        .string()
+        .optional()
+        .describe("Specify 'simple' or 'expanded' to load attributes"),
+      attributeKeys: z
+        .string()
+        .optional()
+        .describe(
+          "Specify a comma-delimited list of attribute keys to limit to specific attributes"
+        ),
+    })
+    .optional()
+    .describe(
+      "Query parameters for filtering attributes (e.g., $filter, $select, $top, $expand, $orderby, $skip, LoadAttributes, attributeKeys)"
     ),
 });
 
@@ -141,16 +181,30 @@ const AddBlocksSchema = z.object({
   order: z.number().optional().describe("Order of the block in the zone"),
 });
 
+const AddAttributeSchema = z.object({
+  AttributeId: z.number().describe("Attribute ID"),
+  EntityId: z.number().describe("Entity ID"),
+  Value: z.string().describe("Attribute value"),
+});
+
+const UpdateAttributeValueSchema = z.object({
+  id: z.number().describe("Attribute Value ID"),
+  Value: z.string().describe("New attribute value"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
   GET_LAVA_APPS = "getLavaApps",
   GET_BLOCKS = "getBlocks",
+  GET_ATTRIBUTES = "getAttributes",
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
   ADD_PAGES = "addPages",
   ADD_BLOCKS = "addBlock",
+  ADD_ATTRIBUTE = "addAttribute",
+  UPDATE_ATTRIBUTE_VALUE = "updateAttributeValue",
 }
 
 enum PromptName {
@@ -482,6 +536,11 @@ export const createServer = () => {
         inputSchema: zodToJsonSchema(GetBlocksSchema) as ToolInput,
       },
       {
+        name: ToolName.GET_ATTRIBUTES,
+        description: "Get attributes from the RockRMS API",
+        inputSchema: zodToJsonSchema(GetAttributesSchema) as ToolInput,
+      },
+      {
         name: ToolName.GET_LAVA_APPS,
         description: "Get lava applications from the RockRMS API",
         inputSchema: zodToJsonSchema(GetLavaAppsSchema) as ToolInput,
@@ -505,6 +564,16 @@ export const createServer = () => {
         name: ToolName.ADD_BLOCKS,
         description: "Add a new block to RockRMS",
         inputSchema: zodToJsonSchema(AddBlocksSchema) as ToolInput,
+      },
+      {
+        name: ToolName.ADD_ATTRIBUTE,
+        description: "Add a new attribute value to RockRMS",
+        inputSchema: zodToJsonSchema(AddAttributeSchema) as ToolInput,
+      },
+      {
+        name: ToolName.UPDATE_ATTRIBUTE_VALUE,
+        description: "Update an existing attribute value in RockRMS",
+        inputSchema: zodToJsonSchema(UpdateAttributeValueSchema) as ToolInput,
       },
     ];
 
@@ -537,6 +606,19 @@ export const createServer = () => {
     if (name === ToolName.GET_BLOCKS) {
       const validatedArgs = GetBlocksSchema.parse(args);
       const result = await getBlocks(validatedArgs);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === ToolName.GET_ATTRIBUTES) {
+      const validatedArgs = GetAttributesSchema.parse(args);
+      const result = await getAttributes(validatedArgs);
       return {
         content: [
           {
@@ -581,6 +663,18 @@ export const createServer = () => {
     if (name === ToolName.ADD_BLOCKS) {
       const validatedArgs = AddBlocksSchema.parse(args);
       const result = await addBlock(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.ADD_ATTRIBUTE) {
+      const validatedArgs = AddAttributeSchema.parse(args);
+      const result = await addAttribute(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.UPDATE_ATTRIBUTE_VALUE) {
+      const validatedArgs = UpdateAttributeValueSchema.parse(args);
+      const result = await updateAttributeValue(validatedArgs);
       return result;
     }
 
