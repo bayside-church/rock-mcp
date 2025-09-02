@@ -31,6 +31,7 @@ import {
   addAttribute,
   updateAttributeValue,
 } from "./attribute-values.js";
+import { addLavaPage } from "./lava-pages.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -192,6 +193,30 @@ const UpdateAttributeValueSchema = z.object({
   Value: z.string().describe("New attribute value"),
 });
 
+const AddLavaPageSchema = z.object({
+  pageName: z.string().describe("Name of the page to create"),
+  appSlug: z
+    .string()
+    .describe("Slug of the lava application this page is loading."),
+  endpointSlug: z
+    .string()
+    .describe("Slug of the endpoint this page is loading."),
+  lavaAppUuid: z.string().optional().describe("UUID of the Lava application"),
+  permissions: z
+    .string()
+    .optional()
+    .default("All")
+    .describe("Permissions for the page"),
+  parentPageId: z
+    .number()
+    .optional()
+    .describe("Parent page ID (defaults to 1775 - Test Pages)"),
+  layoutId: z
+    .number()
+    .optional()
+    .describe("Layout ID to use for the page (defaults to 12 - Full Width)"),
+});
+
 enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
@@ -205,6 +230,7 @@ enum ToolName {
   ADD_BLOCKS = "addBlock",
   ADD_ATTRIBUTE = "addAttribute",
   UPDATE_ATTRIBUTE_VALUE = "updateAttributeValue",
+  ADD_LAVA_PAGE = "addLavaPage",
 }
 
 enum PromptName {
@@ -575,6 +601,12 @@ export const createServer = () => {
         description: "Update an existing attribute value in RockRMS",
         inputSchema: zodToJsonSchema(UpdateAttributeValueSchema) as ToolInput,
       },
+      {
+        name: ToolName.ADD_LAVA_PAGE,
+        description:
+          "Create a new Lava page with htmx integration using page and endpoint slugs",
+        inputSchema: zodToJsonSchema(AddLavaPageSchema) as ToolInput,
+      },
     ];
 
     return { tools };
@@ -675,6 +707,12 @@ export const createServer = () => {
     if (name === ToolName.UPDATE_ATTRIBUTE_VALUE) {
       const validatedArgs = UpdateAttributeValueSchema.parse(args);
       const result = await updateAttributeValue(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.ADD_LAVA_PAGE) {
+      const validatedArgs = AddLavaPageSchema.parse(args);
+      const result = await addLavaPage(validatedArgs);
       return result;
     }
 
