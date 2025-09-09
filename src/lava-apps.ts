@@ -23,6 +23,7 @@ export interface AddLavaEndpointArgs {
   description?: string;
   codeTemplate?: string;
   isActive?: boolean;
+  securityMode?: number; // 0 = Endpoint Execute, 1 = Application View, 2 = Application Edit, 3 = Application Administrate
 }
 
 // Utility function to get page GUID by page title
@@ -296,7 +297,8 @@ export async function addLavaEndpoint(
             name: args.name,
             rateLimitPeriodDurationSeconds: null,
             rateLimitRequestPerPeriod: null,
-            securityMode: 0,
+            securityMode:
+              args.securityMode !== undefined ? args.securityMode : 1,
             slug: args.slug || args.name.toLowerCase().replace(/ /g, "-"),
           },
           isEditable: true,
