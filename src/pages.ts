@@ -20,7 +20,7 @@ export async function getPages(
   args: PagesExecutionArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
     const response = await client.get("/api/Pages", {
       params: args.params,
     });
@@ -44,7 +44,7 @@ export async function getPages(
 // Add a new Page
 export async function addPages(args: AddPagesArgs): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     // Prepare the data for the new Page
     const pageData = {

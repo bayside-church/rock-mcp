@@ -30,7 +30,7 @@ export async function getAttributes(
   args: GetAttributesArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
     const response = await client.get("/api/AttributeValues", {
       params: args.params,
     });
@@ -56,7 +56,7 @@ export async function addAttribute(
   args: AddAttributeValueArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     // Prepare the data for the new Attribute Value
     const attributeData = {
@@ -101,7 +101,7 @@ export async function updateAttributeValue(
   args: UpdateAttributeValueArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     // Prepare the data for updating the Attribute Value
     const attributeData = {

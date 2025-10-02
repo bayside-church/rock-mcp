@@ -29,7 +29,7 @@ export interface AddLavaEndpointArgs {
 // Utility function to get page GUID by page title
 async function getPageGuid(pageTitle: string): Promise<string | null> {
   try {
-    const client = createClient();
+    const client = await createClient();
     const pagesResponse = await client.get("/api/Pages", {
       params: {
         $filter: `PageTitle eq '${pageTitle}'`,
@@ -51,7 +51,7 @@ async function getPageGuid(pageTitle: string): Promise<string | null> {
 // Utility function to get block GUID by block name
 async function getBlockGuid(blockName: string): Promise<string | null> {
   try {
-    const client = createClient();
+    const client = await createClient();
     const blocksResponse = await client.get("/api/Blocks", {
       params: {
         $filter: `Name eq '${blockName}'`,
@@ -75,7 +75,7 @@ export async function getLavaApps(
   args: LavaAppsExecutionArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     const pageGuid = await getPageGuid("Lava Applications");
     if (!pageGuid) {
@@ -139,7 +139,7 @@ export async function addLavaApp(
   args: AddLavaAppArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     const pageGuid = await getPageGuid("Lava Application Detail");
     if (!pageGuid) {
@@ -240,7 +240,7 @@ export async function addLavaEndpoint(
   args: AddLavaEndpointArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     const pageGuid = await getPageGuid("Lava Endpoint Detail");
     if (!pageGuid) {

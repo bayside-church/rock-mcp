@@ -18,7 +18,7 @@ export async function executeSQL(
   const { query } = args;
 
   try {
-    const client = createClient();
+    const client = await createClient();
     const response = await client.post("/api/Lava/RenderTemplate", {
       params: {
         template: `{% sql %}${query}{% endsql %}`,

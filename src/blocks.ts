@@ -20,7 +20,7 @@ export async function getBlocks(
   args: BlocksExecutionArgs
 ): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
     const response = await client.get("/api/Blocks", {
       params: args.params,
     });
@@ -44,7 +44,7 @@ export async function getBlocks(
 // Add a new Block
 export async function addBlock(args: AddBlocksArgs): Promise<CallToolResult> {
   try {
-    const client = createClient();
+    const client = await createClient();
 
     // Prepare the data for the new Block
     const blockData = {
