@@ -28,9 +28,10 @@ import { getBlocks, getBlockType, addBlock } from "./blocks.js";
 import { getLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 import {
   getAttributes,
+  getAttribute,
   addAttribute,
   updateAttributeValue,
-} from "./attribute-values.js";
+} from "./attributes.js";
 import { addLavaPage } from "./lava-pages.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -120,6 +121,41 @@ const GetLavaAppsSchema = z.object({
 });
 
 const GetAttributesSchema = z.object({
+  params: z
+    .object({
+      $expand: z
+        .string()
+        .optional()
+        .describe("Expands related entities inline"),
+      $filter: z
+        .string()
+        .optional()
+        .describe("Filters the results, based on a Boolean condition"),
+      $select: z
+        .string()
+        .optional()
+        .describe("Selects which properties to include in the response"),
+      $orderby: z.string().optional().describe("Sorts the results"),
+      $top: z.number().optional().describe("Returns only the first n results"),
+      $skip: z.number().optional().describe("Skips the first n results"),
+      LoadAttributes: z
+        .string()
+        .optional()
+        .describe("Specify 'simple' or 'expanded' to load attributes"),
+      attributeKeys: z
+        .string()
+        .optional()
+        .describe(
+          "Specify a comma-delimited list of attribute keys to limit to specific attributes"
+        ),
+    })
+    .optional()
+    .describe(
+      "Query parameters for filtering attributes (e.g., $filter, $select, $top, $expand, $orderby, $skip, LoadAttributes, attributeKeys)"
+    ),
+});
+
+const GetAttributeSchema = z.object({
   params: z
     .object({
       $expand: z
@@ -265,6 +301,7 @@ enum ToolName {
   GET_BLOCKS = "getBlocks",
   GET_BLOCK_TYPE = "getBlockType",
   GET_ATTRIBUTES = "getAttributes",
+  GET_ATTRIBUTE = "getAttribute",
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
@@ -614,6 +651,11 @@ export const createServer = () => {
         inputSchema: zodToJsonSchema(GetAttributesSchema) as ToolInput,
       },
       {
+        name: ToolName.GET_ATTRIBUTE,
+        description: "Get attribute definitions from the RockRMS API",
+        inputSchema: zodToJsonSchema(GetAttributeSchema) as ToolInput,
+      },
+      {
         name: ToolName.GET_LAVA_APPS,
         description: "Get lava applications from the RockRMS API",
         inputSchema: zodToJsonSchema(GetLavaAppsSchema) as ToolInput,
@@ -711,6 +753,19 @@ export const createServer = () => {
     if (name === ToolName.GET_ATTRIBUTES) {
       const validatedArgs = GetAttributesSchema.parse(args);
       const result = await getAttributes(validatedArgs);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === ToolName.GET_ATTRIBUTE) {
+      const validatedArgs = GetAttributeSchema.parse(args);
+      const result = await getAttribute(validatedArgs);
       return {
         content: [
           {

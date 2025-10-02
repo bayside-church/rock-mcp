@@ -14,6 +14,19 @@ export interface GetAttributesArgs {
   };
 }
 
+export interface GetAttributeArgs {
+  params?: {
+    $expand?: string;
+    $filter?: string;
+    $select?: string;
+    $orderby?: string;
+    $top?: number;
+    $skip?: number;
+    LoadAttributes?: string;
+    attributeKeys?: string;
+  };
+}
+
 export interface AddAttributeValueArgs {
   AttributeId: number;
   EntityId: number;
@@ -44,6 +57,32 @@ export async function getAttributes(
         {
           type: "text",
           text: `Error fetching attributes: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+// Get Attribute definitions API call
+export async function getAttribute(
+  args: GetAttributeArgs
+): Promise<CallToolResult> {
+  try {
+    const client = await createClient();
+    const response = await client.get("/api/Attributes", {
+      params: args.params,
+    });
+
+    return response.data;
+  } catch (error) {
+    const errorMessage = formatAPIError(error);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error fetching attribute definitions: ${errorMessage}`,
         },
       ],
       isError: true,
@@ -146,6 +185,13 @@ export async function updateAttributeValue(
 export function validateGetAttributesArgs(
   args: unknown
 ): args is GetAttributesArgs {
+  return args !== null && typeof args === "object";
+}
+
+// Validate Get Attribute arguments
+export function validateGetAttributeArgs(
+  args: unknown
+): args is GetAttributeArgs {
   return args !== null && typeof args === "object";
 }
 
