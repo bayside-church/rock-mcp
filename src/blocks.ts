@@ -7,6 +7,21 @@ export interface BlocksExecutionArgs {
   api_key?: string;
 }
 
+export interface BlockTypeExecutionArgs {
+  params?: {
+    $expand?: string;
+    $filter?: string;
+    $select?: string;
+    $orderby?: string;
+    $top?: number;
+    $skip?: number;
+    LoadAttributes?: string;
+    attributeKeys?: string;
+  };
+  base_url?: string;
+  api_key?: string;
+}
+
 export interface AddBlocksArgs {
   name: string;
   blockTypeId?: number;
@@ -34,6 +49,32 @@ export async function getBlocks(
         {
           type: "text",
           text: `Error fetching blocks: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+// Get BlockTypes API call
+export async function getBlockType(
+  args: BlockTypeExecutionArgs
+): Promise<CallToolResult> {
+  try {
+    const client = await createClient();
+    const response = await client.get("/api/BlockTypes", {
+      params: args.params,
+    });
+
+    return response.data;
+  } catch (error) {
+    const errorMessage = formatAPIError(error);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error fetching block types: ${errorMessage}`,
         },
       ],
       isError: true,
@@ -88,6 +129,13 @@ export async function addBlock(args: AddBlocksArgs): Promise<CallToolResult> {
 
 // Validate Blocks execution arguments
 export function validateBlocksArgs(args: unknown): args is BlocksExecutionArgs {
+  return args !== null && typeof args === "object";
+}
+
+// Validate BlockType execution arguments
+export function validateBlockTypeArgs(
+  args: unknown
+): args is BlockTypeExecutionArgs {
   return args !== null && typeof args === "object";
 }
 

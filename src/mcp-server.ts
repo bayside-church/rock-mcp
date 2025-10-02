@@ -24,7 +24,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { getPages, addPages } from "./pages.js";
-import { getBlocks, addBlock } from "./blocks.js";
+import { getBlocks, getBlockType, addBlock } from "./blocks.js";
 import { getLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
 import {
   getAttributes,
@@ -69,6 +69,41 @@ const GetBlocksSchema = z.object({
     })
     .describe(
       "Query parameters for filtering blocks (e.g., $filter, $select, $top)"
+    ),
+});
+
+const GetBlockTypeSchema = z.object({
+  params: z
+    .object({
+      $expand: z
+        .string()
+        .optional()
+        .describe("Expands related entities inline"),
+      $filter: z
+        .string()
+        .optional()
+        .describe("Filters the results, based on a Boolean condition"),
+      $select: z
+        .string()
+        .optional()
+        .describe("Selects which properties to include in the response"),
+      $orderby: z.string().optional().describe("Sorts the results"),
+      $top: z.number().optional().describe("Returns only the first n results"),
+      $skip: z.number().optional().describe("Skips the first n results"),
+      LoadAttributes: z
+        .string()
+        .optional()
+        .describe("Specify 'simple' or 'expanded' to load attributes"),
+      attributeKeys: z
+        .string()
+        .optional()
+        .describe(
+          "Specify a comma-delimited list of attribute keys to limit to specific attributes"
+        ),
+    })
+    .optional()
+    .describe(
+      "Query parameters for filtering block types (e.g., $filter, $select, $top, $expand, $orderby, $skip, LoadAttributes, attributeKeys)"
     ),
 });
 
@@ -228,6 +263,7 @@ enum ToolName {
   GET_PAGES = "getPages",
   GET_LAVA_APPS = "getLavaApps",
   GET_BLOCKS = "getBlocks",
+  GET_BLOCK_TYPE = "getBlockType",
   GET_ATTRIBUTES = "getAttributes",
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
@@ -568,6 +604,11 @@ export const createServer = () => {
         inputSchema: zodToJsonSchema(GetBlocksSchema) as ToolInput,
       },
       {
+        name: ToolName.GET_BLOCK_TYPE,
+        description: "Get block types from the RockRMS API",
+        inputSchema: zodToJsonSchema(GetBlockTypeSchema) as ToolInput,
+      },
+      {
         name: ToolName.GET_ATTRIBUTES,
         description: "Get attributes from the RockRMS API",
         inputSchema: zodToJsonSchema(GetAttributesSchema) as ToolInput,
@@ -644,6 +685,19 @@ export const createServer = () => {
     if (name === ToolName.GET_BLOCKS) {
       const validatedArgs = GetBlocksSchema.parse(args);
       const result = await getBlocks(validatedArgs);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === ToolName.GET_BLOCK_TYPE) {
+      const validatedArgs = GetBlockTypeSchema.parse(args);
+      const result = await getBlockType(validatedArgs);
       return {
         content: [
           {
