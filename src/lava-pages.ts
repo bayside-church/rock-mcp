@@ -1,7 +1,7 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { addPages } from "./pages.js";
-import { addBlock } from "./blocks.js";
-import { addAttribute } from "./attribute-values.js";
+import { addBlock, getBlockType } from "./blocks.js";
+import { addAttribute } from "./attributes.js";
 
 export interface AddLavaPageArgs {
   pageName: string;
@@ -18,6 +18,7 @@ export async function addLavaPage(
   args: AddLavaPageArgs
 ): Promise<CallToolResult> {
   try {
+    //TODO: allow better passing in parentPageId
     // Step 1: Create the page
     const pageResult = await addPages({
       internalName: args.pageName,
@@ -41,10 +42,24 @@ export async function addLavaPage(
       };
     }
 
-    // Step 2: Add block type 1919 (Lava Application Content) to the page
+    // Step 2: Look up the Lava Application Content block type ID
+    const blockTypeId = await getBlockTypeIdByName("Lava Application Content");
+    if (!blockTypeId) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: Could not find block type "Lava Application Content"`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // Step 3: Add block to the page
     const blockResult = await addBlock({
       name: `${args.pageName} Block`,
-      blockTypeId: 1919, // Lava Application Content type
+      blockTypeId: blockTypeId,
       pageId: pageId,
       zone: "Main",
       order: 1,
@@ -64,12 +79,14 @@ export async function addLavaPage(
       };
     }
 
-    // Step 3: Add attribute values to the block
+    // Step 4: Add attribute values to the block
     const attributeResults = [];
 
     // Generate htmx lava code from appSlug and endpointSlug
     const lavaCode = `<div hx-get="^/${args.appSlug}/${args.endpointSlug}" hx-trigger="load" >
 </div>`;
+
+    //TODO: query the lava code attribute id instead of hardcoding it
 
     // Add attribute 7482 (Lava Code)
     const lavaCodeResult = await addAttribute({
@@ -92,6 +109,8 @@ export async function addLavaPage(
         `Lava App UUID attribute: ${JSON.stringify(lavaAppResult)}`
       );
     }
+
+    //TODO: query the permissions attribute id instead of hardcoding it
 
     // Add attribute 7483 (Permissions)
     const permissionsResult = await addAttribute({
@@ -131,6 +150,48 @@ ${attributeResults.join("\n")}`,
       ],
       isError: true,
     };
+  }
+}
+
+// Helper function to look up block type ID by name
+async function getBlockTypeIdByName(name: string): Promise<number | null> {
+  try {
+    const result = await getBlockType({
+      params: {
+        $filter: `Name eq '${name}'`,
+        $select: "Id,Name",
+        $top: 1,
+      },
+    });
+
+    if (Array.isArray(result) && result.length > 0 && result[0].Id) {
+      return result[0].Id;
+    }
+
+    if (
+      result.content &&
+      result.content[0] &&
+      result.content[0].type === "text"
+    ) {
+      const text = result.content[0].text;
+      // Try to parse JSON array from the text
+      try {
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].Id) {
+            return parsed[0].Id;
+          }
+        }
+      } catch (e) {
+        // If parsing fails, continue to return null
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error looking up block type "${name}":`, error);
+    return null;
   }
 }
 
