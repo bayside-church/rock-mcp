@@ -79,47 +79,68 @@ export async function addLavaPage(
       };
     }
 
-    // Step 4: Add attribute values to the block
+    // Step 4: Query attribute IDs dynamically
+    const lavaTemplateAttrId = await getAttributeIdByKey(
+      "LavaTemplate",
+      blockTypeId
+    );
+    const lavaAppAttrId = await getAttributeIdByKey("Application", blockTypeId);
+    const enabledLavaCommandsAttrId = await getAttributeIdByKey(
+      "EnabledLavaCommands",
+      blockTypeId
+    );
+
+    if (!lavaTemplateAttrId || !enabledLavaCommandsAttrId) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: Could not find required attributes for Lava Application Content block. blockTypeId=${blockTypeId}, lavaTemplateAttrId=${lavaTemplateAttrId}, enabledLavaCommandsAttrId=${enabledLavaCommandsAttrId}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // Step 5: Add attribute values to the block
     const attributeResults = [];
 
     // Generate htmx lava code from appSlug and endpointSlug
     const lavaCode = `<div hx-get="^/${args.appSlug}/${args.endpointSlug}" hx-trigger="load" >
 </div>`;
 
-    //TODO: query the lava code attribute id instead of hardcoding it
-
-    // Add attribute 7482 (Lava Code)
+    // Add Lava Template attribute
     const lavaCodeResult = await addAttribute({
-      AttributeId: 7482,
+      AttributeId: lavaTemplateAttrId,
       EntityId: blockId,
       Value: lavaCode,
     });
     attributeResults.push(
-      `Lava Code attribute: ${JSON.stringify(lavaCodeResult)}`
+      `Lava Template attribute: ${JSON.stringify(lavaCodeResult)}`
     );
 
-    // Add attribute 7481 (Lava App UUID) if provided
-    if (args.lavaAppUuid) {
+    // Add Application attribute if provided
+    if (args.lavaAppUuid && lavaAppAttrId) {
       const lavaAppResult = await addAttribute({
-        AttributeId: 7481,
+        AttributeId: lavaAppAttrId,
         EntityId: blockId,
         Value: args.lavaAppUuid,
       });
       attributeResults.push(
-        `Lava App UUID attribute: ${JSON.stringify(lavaAppResult)}`
+        `Application attribute: ${JSON.stringify(lavaAppResult)}`
       );
     }
 
-    //TODO: query the permissions attribute id instead of hardcoding it
-
-    // Add attribute 7483 (Permissions)
-    const permissionsResult = await addAttribute({
-      AttributeId: 7483,
+    // Add Enabled Lava Commands attribute
+    const enabledLavaCommandsResult = await addAttribute({
+      AttributeId: enabledLavaCommandsAttrId,
       EntityId: blockId,
       Value: args.permissions || "All",
     });
     attributeResults.push(
-      `Permissions attribute: ${JSON.stringify(permissionsResult)}`
+      `Enabled Lava Commands attribute: ${JSON.stringify(
+        enabledLavaCommandsResult
+      )}`
     );
 
     return {
@@ -191,6 +212,42 @@ async function getBlockTypeIdByName(name: string): Promise<number | null> {
     return null;
   } catch (error) {
     console.error(`Error looking up block type "${name}":`, error);
+    return null;
+  }
+}
+
+// Helper function to get attribute ID by key and block type ID
+async function getAttributeIdByKey(
+  key: string,
+  blockTypeId: number
+): Promise<number | null> {
+  try {
+    const { createClient } = await import("./api-client.js");
+    const client = await createClient();
+
+    const response = await client.get("/api/Attributes", {
+      params: {
+        $filter: `Key eq '${key}' and EntityTypeQualifierValue eq '${blockTypeId}'`,
+        $select: "Id,Name,Key",
+        $top: 1,
+      },
+    });
+
+    // Response data should be an array
+    if (
+      Array.isArray(response.data) &&
+      response.data.length > 0 &&
+      response.data[0].Id
+    ) {
+      return response.data[0].Id;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(
+      `Error looking up attribute "${key}" for block type ${blockTypeId}:`,
+      error
+    );
     return null;
   }
 }
