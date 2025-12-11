@@ -36,7 +36,10 @@ Configure your RockRMS API connection using environment variables. The server su
    ```env
    # Rock RMS API Configuration
    ROCK_API_BASE_URL=https://your-rock-instance.com
-   ROCK_API_KEY=your_api_key_here
+   
+   # Authentication (username/password is recommended)
+   ROCK_USERNAME=your_username
+   ROCK_PASSWORD=your_password
    
    # Server Configuration (optional)
    PORT=3003
@@ -45,15 +48,20 @@ Configure your RockRMS API connection using environment variables. The server su
 3. **Alternative: Set environment variables directly:**
    ```bash
    export ROCK_API_BASE_URL="https://rock.yourdomain.com"
-   export ROCK_API_KEY="your-api-key"
+   export ROCK_USERNAME="your-username"
+   export ROCK_PASSWORD="your-password"
    export PORT="3003"
    ```
 
 ### Available Environment Variables
 
 - `ROCK_API_BASE_URL` - Your RockRMS instance URL (required)
-- `ROCK_API_KEY` - Your RockRMS API key (required)
+- `ROCK_USERNAME` - Your RockRMS username (recommended)
+- `ROCK_PASSWORD` - Your RockRMS password (recommended)
+- `ROCK_API_KEY` - Your RockRMS API key (alternative, may have permission limitations)
 - `PORT` - Server port (default: 3003 for Streamable HTTP, 3002 for SSE, 3001 for stdio)
+
+> **Note:** Username/password authentication is the preferred method. API keys may have permission limitations that prevent access to certain endpoints.
 
 ## Usage
 
@@ -94,7 +102,8 @@ Add the following to your `.cursor/mcp.json` file:
       "url": "http://localhost:3003/mcp",
       "env": {
         "ROCK_API_BASE_URL": "https://your-rock-instance.com",
-        "ROCK_API_KEY": "your_api_key_here"
+        "ROCK_USERNAME": "your_username",
+        "ROCK_PASSWORD": "your_password"
       }
     }
   }
@@ -109,7 +118,8 @@ Add the following to your `.cursor/mcp.json` file:
       "url": "http://localhost:3002/sse",
       "env": {
         "ROCK_API_BASE_URL": "https://your-rock-instance.com",
-        "ROCK_API_KEY": "your_api_key_here"
+        "ROCK_USERNAME": "your_username",
+        "ROCK_PASSWORD": "your_password"
       }
     }
   }
@@ -126,7 +136,8 @@ Add the following to your `.cursor/mcp.json` file:
       "cwd": "/path/to/rock-mcp",
       "env": {
         "ROCK_API_BASE_URL": "https://your-rock-instance.com",
-        "ROCK_API_KEY": "your_api_key_here"
+        "ROCK_USERNAME": "your_username",
+        "ROCK_PASSWORD": "your_password"
       }
     }
   }
