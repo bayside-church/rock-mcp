@@ -16,9 +16,10 @@ export interface AddLavaAppArgs {
   securityMode?: number;
 }
 
-export interface AddLavaEndpointArgs {
+export interface LavaEndpointArgs {
   name: string;
   lavaApplicationId: string;
+  id?: string; // If provided, updates existing endpoint; if omitted or "0", creates new
   slug?: string;
   description?: string;
   codeTemplate?: string;
@@ -26,6 +27,7 @@ export interface AddLavaEndpointArgs {
   securityMode?: number; // 0 = Endpoint Execute, 1 = Application View, 2 = Application Edit, 3 = Application Administrate
   httpMethod?: number; // 0 = GET, 1 = POST, 2 = PUT, 3 = DELETE
 }
+
 
 // Utility function to get page GUID by page title
 async function getPageGuid(pageTitle: string): Promise<string | null> {
@@ -72,9 +74,7 @@ async function getBlockGuid(blockName: string): Promise<string | null> {
 }
 
 // Execute Lava Apps API call
-export async function getLavaApps(
-  args: LavaAppsExecutionArgs
-): Promise<CallToolResult> {
+export async function getLavaApps(): Promise<CallToolResult> {
   try {
     const client = await createClient();
 
@@ -128,6 +128,71 @@ export async function getLavaApps(
         {
           type: "text",
           text: `Error fetching pages: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+// Get Lava Endpoints for a specific Lava Application
+export async function getLavaEndpoints(
+  lavaApplicationId: string
+): Promise<CallToolResult> {
+  try {
+    const client = await createClient();
+
+    const pageGuid = await getPageGuid("Lava Application Detail");
+    if (!pageGuid) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Application Detail page",
+          },
+        ],
+      };
+    }
+
+    const blockGuid = await getBlockGuid("Lava Endpoint List");
+    if (!blockGuid) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Cannot find Lava Endpoint List block",
+          },
+        ],
+      };
+    }
+
+    const gridResponse = await client.post(
+      `/api/v2/BlockActions/${pageGuid}/${blockGuid}/GetGridData`,
+      {
+        __context: {
+          pageParameters: {
+            LavaApplicationId: lavaApplicationId,
+          },
+        },
+      }
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(gridResponse.data, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = formatAPIError(error);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error fetching lava endpoints: ${errorMessage}`,
         },
       ],
       isError: true,
@@ -236,10 +301,15 @@ export async function addLavaApp(
   }
 }
 
-// Add a new Lava Endpoint
-export async function addLavaEndpoint(
-  args: AddLavaEndpointArgs
+// Add or edit a Lava Endpoint
+// If args.id is provided and not "0", it updates an existing endpoint
+// If args.id is omitted or "0", it creates a new endpoint
+export async function saveLavaEndpoint(
+  args: LavaEndpointArgs
 ): Promise<CallToolResult> {
+  const isEditing = args.id && args.id !== "0";
+  const endpointId = args.id || "0";
+
   try {
     const client = await createClient();
 
@@ -273,7 +343,7 @@ export async function addLavaEndpoint(
         __context: {
           pageParameters: {
             LavaApplicationId: args.lavaApplicationId,
-            LavaEndpointId: "0",
+            LavaEndpointId: endpointId,
           },
         },
         box: {
@@ -293,7 +363,7 @@ export async function addLavaEndpoint(
               },
             ],
             httpMethod: args.httpMethod ?? 0,
-            idKey: "",
+            idKey: isEditing ? endpointId : "",
             isActive: args.isActive !== undefined ? args.isActive : true,
             name: args.name,
             rateLimitPeriodDurationSeconds: null,
@@ -323,12 +393,13 @@ export async function addLavaEndpoint(
 
     const lavaEndpointEditorUrl = process.env.ROCK_API_BASE_URL + response.data;
     const lavaEndpointId = response.data.replace("/cms/lava-applications/", "");
+    const action = isEditing ? "updated" : "created";
 
     return {
       content: [
         {
           type: "text",
-          text: `Successfully created Lava Endpoint: ${JSON.stringify(
+          text: `Successfully ${action} Lava Endpoint: ${JSON.stringify(
             {
               lavaEndpointEditorUrl,
               lavaEndpointId,
@@ -342,18 +413,20 @@ export async function addLavaEndpoint(
   } catch (error) {
     console.error("error", error);
     const errorMessage = formatAPIError(error);
+    const action = isEditing ? "updating" : "creating";
 
     return {
       content: [
         {
           type: "text",
-          text: `Error creating Lava Endpoint: ${errorMessage}`,
+          text: `Error ${action} Lava Endpoint: ${errorMessage}`,
         },
       ],
       isError: true,
     };
   }
 }
+
 
 // Validate Lava Apps execution arguments
 export function validateLavaAppsArgs(
@@ -372,10 +445,10 @@ export function validateAddLavaAppArgs(args: unknown): args is AddLavaAppArgs {
   );
 }
 
-// Validate Add Lava Endpoint arguments
-export function validateAddLavaEndpointArgs(
+// Validate Lava Endpoint arguments
+export function validateLavaEndpointArgs(
   args: unknown
-): args is AddLavaEndpointArgs {
+): args is LavaEndpointArgs {
   return (
     args !== null &&
     typeof args === "object" &&

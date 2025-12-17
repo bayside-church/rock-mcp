@@ -25,7 +25,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { getPages, addPages } from "./pages.js";
 import { getBlocks, getBlockType, addBlock } from "./blocks.js";
-import { getLavaApps, addLavaApp, addLavaEndpoint } from "./lava-apps.js";
+import { getLavaApps, getLavaEndpoints, addLavaApp, saveLavaEndpoint } from "./lava-apps.js";
 import {
   getAttributes,
   getAttribute,
@@ -108,16 +108,10 @@ const GetBlockTypeSchema = z.object({
     ),
 });
 
-const GetLavaAppsSchema = z.object({
-  params: z
-    .object({
-      $filter: z.string().describe("Filter expression"),
-      $select: z.string().describe("Select expression"),
-      $top: z.number().describe("Number of records to return"),
-    })
-    .describe(
-      "Query parameters for filtering lava applications (e.g., $filter, $select, $top)"
-    ),
+const GetLavaAppsSchema = z.object({});
+
+const GetLavaEndpointsSchema = z.object({
+  lavaApplicationId: z.string().describe("Lava application ID to get endpoints for"),
 });
 
 const GetAttributesSchema = z.object({
@@ -244,6 +238,35 @@ const AddLavaEndpointSchema = z.object({
     ),
 });
 
+const EditLavaEndpointSchema = z.object({
+  id: z.string().describe("Lava endpoint ID to edit"),
+  lavaApplicationId: z.string().describe("Lava application ID"),
+  name: z.string().describe("Name of the Lava endpoint"),
+  slug: z.string().optional().describe("Slug of the Lava endpoint"),
+  codeTemplate: z
+    .string()
+    .optional()
+    .describe(
+      "The Lava endpoint code template. This is the code that will be executed when the endpoint is called."
+    ),
+  description: z
+    .string()
+    .optional()
+    .describe("Description of the Lava endpoint"),
+  isActive: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Whether the endpoint is active"),
+  httpMethod: z
+    .number()
+    .optional()
+    .default(0)
+    .describe(
+      "HTTP method for the endpoint. Options: 0 = GET, 1 = POST, 2 = PUT, 3 = DELETE. Defaults to GET."
+    ),
+});
+
 const AddPagesSchema = z.object({
   internalName: z.string().describe("Internal name of the page"),
   pageTitle: z.string().describe("Title of the page"),
@@ -305,6 +328,7 @@ enum ToolName {
   ECHO = "echo",
   GET_PAGES = "getPages",
   GET_LAVA_APPS = "getLavaApps",
+  GET_LAVA_ENDPOINTS = "getLavaEndpoints",
   GET_BLOCKS = "getBlocks",
   GET_BLOCK_TYPE = "getBlockType",
   GET_ATTRIBUTES = "getAttributes",
@@ -312,6 +336,7 @@ enum ToolName {
   EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
+  EDIT_LAVA_ENDPOINT = "editLavaEndpoint",
   ADD_PAGES = "addPages",
   ADD_BLOCKS = "addBlock",
   ADD_ATTRIBUTE = "addAttribute",
@@ -668,6 +693,11 @@ export const createServer = () => {
         inputSchema: zodToJsonSchema(GetLavaAppsSchema) as ToolInput,
       },
       {
+        name: ToolName.GET_LAVA_ENDPOINTS,
+        description: "Get lava endpoints for a specific lava application from the RockRMS API",
+        inputSchema: zodToJsonSchema(GetLavaEndpointsSchema) as ToolInput,
+      },
+      {
         name: ToolName.ADD_LAVA_APP,
         description: "Add a new lava application to RockRMS",
         inputSchema: zodToJsonSchema(AddLavaAppSchema) as ToolInput,
@@ -676,6 +706,11 @@ export const createServer = () => {
         name: ToolName.ADD_LAVA_ENDPOINT,
         description: "Add a new lava endpoint to RockRMS",
         inputSchema: zodToJsonSchema(AddLavaEndpointSchema) as ToolInput,
+      },
+      {
+        name: ToolName.EDIT_LAVA_ENDPOINT,
+        description: "Edit an existing lava endpoint in RockRMS",
+        inputSchema: zodToJsonSchema(EditLavaEndpointSchema) as ToolInput,
       },
       {
         name: ToolName.ADD_PAGES,
@@ -784,8 +819,7 @@ export const createServer = () => {
     }
 
     if (name === ToolName.GET_LAVA_APPS) {
-      const validatedArgs = GetLavaAppsSchema.parse(args);
-      const result = await getLavaApps(validatedArgs);
+      const result = await getLavaApps();
       return {
         content: [
           {
@@ -796,6 +830,12 @@ export const createServer = () => {
       };
     }
 
+    if (name === ToolName.GET_LAVA_ENDPOINTS) {
+      const validatedArgs = GetLavaEndpointsSchema.parse(args);
+      const result = await getLavaEndpoints(validatedArgs.lavaApplicationId);
+      return result;
+    }
+
     if (name === ToolName.ADD_LAVA_APP) {
       const validatedArgs = AddLavaAppSchema.parse(args);
       const result = await addLavaApp(validatedArgs);
@@ -804,7 +844,13 @@ export const createServer = () => {
 
     if (name === ToolName.ADD_LAVA_ENDPOINT) {
       const validatedArgs = AddLavaEndpointSchema.parse(args);
-      const result = await addLavaEndpoint(validatedArgs);
+      const result = await saveLavaEndpoint(validatedArgs);
+      return result;
+    }
+
+    if (name === ToolName.EDIT_LAVA_ENDPOINT) {
+      const validatedArgs = EditLavaEndpointSchema.parse(args);
+      const result = await saveLavaEndpoint(validatedArgs);
       return result;
     }
 
