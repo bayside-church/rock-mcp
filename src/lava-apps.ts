@@ -24,6 +24,7 @@ export interface AddLavaEndpointArgs {
   codeTemplate?: string;
   isActive?: boolean;
   securityMode?: number; // 0 = Endpoint Execute, 1 = Application View, 2 = Application Edit, 3 = Application Administrate
+  httpMethod?: number; // 0 = GET, 1 = POST, 2 = PUT, 3 = DELETE
 }
 
 // Utility function to get page GUID by page title
@@ -291,7 +292,7 @@ export async function addLavaEndpoint(
                 value: "All",
               },
             ],
-            httpMethod: 0,
+            httpMethod: args.httpMethod ?? 0,
             idKey: "",
             isActive: args.isActive !== undefined ? args.isActive : true,
             name: args.name,

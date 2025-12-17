@@ -235,6 +235,13 @@ const AddLavaEndpointSchema = z.object({
     .optional()
     .default(true)
     .describe("Whether the endpoint is active"),
+  httpMethod: z
+    .number()
+    .optional()
+    .default(0)
+    .describe(
+      "HTTP method for the endpoint. Options: 0 = GET, 1 = POST, 2 = PUT, 3 = DELETE. Defaults to GET."
+    ),
 });
 
 const AddPagesSchema = z.object({
