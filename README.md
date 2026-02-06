@@ -146,18 +146,7 @@ Add the following to your `.cursor/mcp.json` file:
 
 ### Available Tools
 
-#### 1. Execute SQL
-Execute SQL queries against the RockRMS database:
-```json
-{
-  "name": "execute_sql",
-  "arguments": {
-    "query": "SELECT TOP 10 * FROM Person WHERE IsActive = 1"
-  }
-}
-```
-
-#### 2. Get Pages
+#### Get Pages
 Retrieve pages from RockRMS:
 ```json
 {

@@ -333,7 +333,6 @@ enum ToolName {
   GET_BLOCK_TYPE = "getBlockType",
   GET_ATTRIBUTES = "getAttributes",
   GET_ATTRIBUTE = "getAttribute",
-  EXECUTE_SQL = "executeSQL",
   ADD_LAVA_APP = "addLavaApp",
   ADD_LAVA_ENDPOINT = "addLavaEndpoint",
   EDIT_LAVA_ENDPOINT = "editLavaEndpoint",
